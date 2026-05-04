@@ -2,8 +2,10 @@
 Django settings for GmailAccount project.
 """
 
+
 from pathlib import Path
 import os
+import sys
 import json
 
 # dotenv is only needed locally; on Vercel env vars are injected directly
@@ -115,10 +117,18 @@ TEMPLATES = [
 # Fine for sessions/OAuth state since those are short-lived,
 # but don't use it for persistent user data in production.
 # ============================================================
+
+
+
+if os.environ.get('VERCEL'):
+    DB_PATH = '/tmp/db.sqlite3'
+else:
+    DB_PATH = str(BASE_DIR / 'db.sqlite3')
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/tmp/db.sqlite3',  # /tmp is writable on Vercel
+        'NAME': DB_PATH,
     }
 }
 
