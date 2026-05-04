@@ -5,10 +5,13 @@ Django settings for GmailAccount project.
 from pathlib import Path
 import os
 import json
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# dotenv is only needed locally; on Vercel env vars are injected directly
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 # ============================================================
 # BASE DIRECTORY
@@ -18,12 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ============================================================
 # SECURITY SETTINGS
 # ============================================================
-SECRET_KEY = os.getenv(
+SECRET_KEY = os.environ.get(
     'SECRET_KEY',
     'django-insecure-lxzi8k8=8t81_hr_j_5gs9d-5a2-nyv4_3$s3!c0+6=w0g+=vb'
 )
 
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
+# On Vercel, set DEBUG=False in environment variables
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
@@ -41,13 +45,18 @@ if DEBUG:
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # ============================================================
-# GOOGLE CREDENTIALS — write from env variable if present
+# GOOGLE CREDENTIALS — write credentials.json from env var
+# Vercel filesystem is read-only except /tmp
 # ============================================================
-google_creds = os.getenv('GOOGLE_CREDENTIALS')
+GOOGLE_CREDENTIALS_PATH = '/tmp/credentials.json'
+
+google_creds = os.environ.get('GOOGLE_CREDENTIALS')
 if google_creds:
-    creds_path = BASE_DIR / 'credentials.json'
-    with open(creds_path, 'w') as f:
+    with open(GOOGLE_CREDENTIALS_PATH, 'w') as f:
         json.dump(json.loads(google_creds), f)
+elif (BASE_DIR / 'credentials.json').exists():
+    # Local development: use the file directly
+    GOOGLE_CREDENTIALS_PATH = str(BASE_DIR / 'credentials.json')
 
 # ============================================================
 # INSTALLED APPS
@@ -102,11 +111,14 @@ TEMPLATES = [
 
 # ============================================================
 # DATABASE
+# SQLite doesn't persist on Vercel between requests.
+# Fine for sessions/OAuth state since those are short-lived,
+# but don't use it for persistent user data in production.
 # ============================================================
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': '/tmp/db.sqlite3',  # /tmp is writable on Vercel
     }
 }
 
@@ -143,7 +155,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ============================================================
 # GOOGLE DRIVE / OAUTH SETTINGS
 # ============================================================
-GOOGLE_CLIENT_SECRETS_FILE = BASE_DIR / 'credentials.json'
+GOOGLE_CLIENT_SECRETS_FILE = GOOGLE_CREDENTIALS_PATH
 
 GOOGLE_DRIVE_SCOPES = [
     "https://www.googleapis.com/auth/drive",
@@ -151,7 +163,7 @@ GOOGLE_DRIVE_SCOPES = [
     "https://www.googleapis.com/auth/drive.metadata.readonly",
 ]
 
-GOOGLE_REDIRECT_URI = os.getenv(
+GOOGLE_REDIRECT_URI = os.environ.get(
     "GOOGLE_REDIRECT_URI",
     "http://localhost:8000/oauth2callback/"
 )
@@ -161,5 +173,5 @@ GOOGLE_REDIRECT_URI = os.getenv(
 # ============================================================
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False') == 'True'
 SESSION_SAVE_EVERY_REQUEST = True
