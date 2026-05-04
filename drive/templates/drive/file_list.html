@@ -1,0 +1,300 @@
+<!-- drive/templates/drive/file_list.html -->
+{% extends "base.html" %}
+{% block title %}My Drive{% endblock %}
+
+{% block extra_css %}
+/* ── Page header ── */
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+}
+.page-title { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.4px; color: var(--text); }
+.page-sub   { font-size: 0.85rem; color: var(--text3); margin-top: 2px; }
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 24px; flex-wrap: wrap;
+}
+.search-wrap {
+  position: relative; flex: 1; min-width: 220px; max-width: 380px;
+}
+.search-wrap svg {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; color: var(--text3); pointer-events: none;
+}
+.search-input {
+  width: 100%; padding: 9px 14px 9px 36px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--radius); color: var(--text); font-family: inherit;
+  font-size: 0.875rem; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-input::placeholder { color: var(--text3); }
+.search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: var(--radius);
+  font-family: inherit; font-size: 0.875rem; font-weight: 500;
+  cursor: pointer; border: none; transition: all 0.15s; white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(79,142,247,0.35); }
+.btn-secondary { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
+.btn-secondary:hover { background: var(--bg2); color: var(--text); border-color: var(--border2); }
+.btn svg { width: 15px; height: 15px; }
+
+/* ── Upload zone ── */
+.upload-zone {
+  border: 1.5px dashed var(--border2); border-radius: var(--radius-lg);
+  padding: 20px 24px; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 16px;
+  background: var(--bg2); transition: border-color 0.2s, background 0.2s;
+  flex-wrap: wrap;
+}
+.upload-zone:hover { border-color: var(--accent); background: rgba(79,142,247,0.04); }
+.upload-zone-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  background: var(--accent-glow); display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.upload-zone-icon svg { width: 20px; height: 20px; color: var(--accent); }
+.upload-zone-text { flex: 1; }
+.upload-zone-title { font-weight: 500; font-size: 0.9rem; color: var(--text); }
+.upload-zone-sub   { font-size: 0.8rem; color: var(--text3); margin-top: 2px; }
+.file-input { display: none; }
+.upload-zone-actions { display: flex; align-items: center; gap: 10px; }
+.file-label {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 16px; border-radius: var(--radius);
+  background: var(--bg3); color: var(--text2); border: 1px solid var(--border2);
+  font-family: inherit; font-size: 0.85rem; font-weight: 500;
+  cursor: pointer; transition: all 0.15s;
+}
+.file-label:hover { background: var(--bg2); color: var(--text); }
+#filename-display { font-size: 0.8rem; color: var(--text3); }
+
+/* ── Stats bar ── */
+.stats-bar {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 16px; font-size: 0.82rem; color: var(--text3);
+}
+.stats-count {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 2px 10px;
+  font-family: 'DM Mono', monospace; font-size: 0.78rem; color: var(--text2);
+}
+
+/* ── File grid/table ── */
+.file-table { width: 100%; border-collapse: collapse; }
+.file-table th {
+  text-align: left; padding: 10px 16px;
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text3);
+  border-bottom: 1px solid var(--border);
+}
+.file-row {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+  animation: fadeRow 0.3s ease both;
+}
+.file-row:hover { background: var(--bg2); }
+@keyframes fadeRow {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.file-row td { padding: 13px 16px; vertical-align: middle; }
+
+.file-icon-wrap {
+  width: 34px; height: 34px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 17px;
+}
+.file-name-cell { display: flex; align-items: center; gap: 12px; }
+.file-name { font-weight: 500; font-size: 0.9rem; color: var(--text); }
+.file-type {
+  font-size: 0.75rem; color: var(--text3);
+  font-family: 'DM Mono', monospace;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 4px; padding: 2px 7px;
+}
+
+.actions { display: flex; align-items: center; gap: 6px; }
+.action-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 7px; border: none;
+  font-family: inherit; font-size: 0.8rem; font-weight: 500;
+  cursor: pointer; transition: all 0.13s; text-decoration: none;
+}
+.action-dl {
+  background: rgba(79,142,247,0.1); color: var(--accent);
+  border: 1px solid rgba(79,142,247,0.2);
+}
+.action-dl:hover { background: rgba(79,142,247,0.2); }
+.action-del {
+  background: rgba(248,113,113,0.08); color: var(--red);
+  border: 1px solid rgba(248,113,113,0.15);
+}
+.action-del:hover { background: rgba(248,113,113,0.18); }
+.action-btn svg { width: 13px; height: 13px; }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center; padding: 64px 24px;
+}
+.empty-icon {
+  width: 64px; height: 64px; border-radius: 16px;
+  background: var(--bg3); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; margin: 0 auto 20px;
+}
+.empty-title { font-size: 1.1rem; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+.empty-sub { font-size: 0.875rem; color: var(--text3); }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .main { padding: 20px 16px; }
+  .sidebar { display: none; }
+  .file-type { display: none; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">My Drive</h1>
+    <p class="page-sub">All your files in one place</p>
+  </div>
+</div>
+
+<!-- Toolbar: search + upload trigger -->
+<div class="toolbar">
+  <form method="get" style="display:contents">
+    <div class="search-wrap">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/>
+      </svg>
+      <input class="search-input" type="text" name="q" value="{{ query }}" placeholder="Search files…" autocomplete="off">
+    </div>
+    <button class="btn btn-secondary" type="submit">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+      Search
+    </button>
+  </form>
+</div>
+
+<!-- Upload zone -->
+<form method="post" action="{% url 'drive_upload' %}" enctype="multipart/form-data" id="upload-form">
+  {% csrf_token %}
+  <div class="upload-zone" id="upload-zone">
+    <div class="upload-zone-icon">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+      </svg>
+    </div>
+    <div class="upload-zone-text">
+      <div class="upload-zone-title">Upload a file</div>
+      <div class="upload-zone-sub" id="filename-display">Drag &amp; drop or click to browse</div>
+    </div>
+    <div class="upload-zone-actions">
+      <input class="file-input" type="file" name="file" id="file-input" required>
+      <label class="file-label" for="file-input">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+        Choose file
+      </label>
+      <button class="btn btn-primary" type="submit">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Upload
+      </button>
+    </div>
+  </div>
+</form>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <span class="stats-count">{{ files|length }} file{{ files|length|pluralize }}</span>
+  {% if query %}<span>— results for "<strong>{{ query }}</strong>"</span>{% endif %}
+</div>
+
+<!-- File table -->
+{% if files %}
+<table class="file-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th style="text-align:right">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for file in files %}
+    <tr class="file-row" style="animation-delay: {{ forloop.counter0 }}00ms">
+      <td>
+        <div class="file-name-cell">
+          <div class="file-icon-wrap" style="background:{% cycle 'rgba(79,142,247,0.1)' 'rgba(52,211,153,0.1)' 'rgba(251,191,36,0.1)' 'rgba(167,139,250,0.1)' %}">
+            {% if 'image' in file.mimeType %}🖼
+            {% elif 'pdf' in file.mimeType %}📄
+            {% elif 'video' in file.mimeType %}🎬
+            {% elif 'audio' in file.mimeType %}🎵
+            {% elif 'spreadsheet' in file.mimeType or 'excel' in file.mimeType %}📊
+            {% elif 'document' in file.mimeType or 'word' in file.mimeType %}📝
+            {% elif 'folder' in file.mimeType %}📁
+            {% elif 'zip' in file.mimeType or 'compressed' in file.mimeType %}🗜
+            {% else %}📎{% endif %}
+          </div>
+          <span class="file-name">{{ file.name }}</span>
+        </div>
+      </td>
+      <td><span class="file-type">{{ file.mimeType|truncatechars:32 }}</span></td>
+      <td>
+        <div class="actions" style="justify-content:flex-end">
+          <a class="action-btn action-dl" href="{% url 'drive_download' file.id %}">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download
+          </a>
+          <form method="post" action="{% url 'drive_delete' file.id %}" style="display:inline" onsubmit="return confirm('Delete {{ file.name }}?')">
+            {% csrf_token %}
+            <button class="action-btn action-del" type="submit">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              Delete
+            </button>
+          </form>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">📂</div>
+  <p class="empty-title">{% if query %}No files match "{{ query }}"{% else %}No files yet{% endif %}</p>
+  <p class="empty-sub">{% if query %}Try a different search term{% else %}Upload a file to get started{% endif %}</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const fileInput = document.getElementById('file-input');
+const display   = document.getElementById('filename-display');
+const zone      = document.getElementById('upload-zone');
+
+fileInput.addEventListener('change', () => {
+  display.textContent = fileInput.files[0]?.name || 'No file chosen';
+});
+
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
+zone.addEventListener('dragleave', ()  => { zone.style.borderColor = ''; });
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.style.borderColor = '';
+  const f = e.dataTransfer.files[0];
+  if (!f) return;
+  const dt = new DataTransfer();
+  dt.items.add(f);
+  fileInput.files = dt.files;
+  display.textContent = f.name;
+});
+</script>
+{% endblock %}
