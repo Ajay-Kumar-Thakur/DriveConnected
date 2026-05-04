@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import json
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -19,7 +20,8 @@ load_dotenv()
 
 # OAuth settings (required for Google OAuth)
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+if DEBUG:
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # ============================================================
 # BASE DIRECTORY
@@ -178,3 +180,13 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
 SESSION_SAVE_EVERY_REQUEST = True
+
+
+# Google credentials from environment
+google_creds = os.getenv('GOOGLE_CREDENTIALS')
+if google_creds:
+    creds_path = BASE_DIR / 'credentials.json'
+    with open(creds_path, 'w') as f:
+        json.dump(json.loads(google_creds), f)
+
+GOOGLE_CLIENT_SECRETS_FILE = BASE_DIR / "credentials.json"
