@@ -11,32 +11,44 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-
-# settings.py
 import os
 from dotenv import load_dotenv
+
+# Load environment variables from .env file
 load_dotenv()
+
+# OAuth settings (required for Google OAuth)
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# ============================================================
+# BASE DIRECTORY
+# ============================================================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# ============================================================
+# SECURITY SETTINGS
+# ============================================================
+SECRET_KEY = os.getenv(
+    'SECRET_KEY',
+    'django-insecure-lxzi8k8=8t81_hr_j_5gs9d-5a2-nyv4_3$s3!c0+6=w0g+=vb'
+)
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-lxzi8k8=8t81_hr_j_5gs9d-5a2-nyv4_3$s3!c0+6=w0g+=vb'
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+ALLOWED_HOSTS = ['*']
 
-ALLOWED_HOSTS = []
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.vercel.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
 
-# Application definition
-
+# ============================================================
+# INSTALLED APPS
+# ============================================================
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -47,19 +59,32 @@ INSTALLED_APPS = [
     'drive',
 ]
 
+
+# ============================================================
+# MIDDLEWARE
+# ============================================================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Must be 2nd
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-     'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
-ROOT_URLCONF = 'GmailAccount.urls'
 
+# ============================================================
+# URL & WSGI
+# ============================================================
+ROOT_URLCONF = 'GmailAccount.urls'
+WSGI_APPLICATION = 'GmailAccount.wsgi.application'
+
+
+# ============================================================
+# TEMPLATES
+# ============================================================
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -75,12 +100,10 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'GmailAccount.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# ============================================================
+# DATABASE
+# ============================================================
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -89,9 +112,9 @@ DATABASES = {
 }
 
 
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
+# ============================================================
+# PASSWORD VALIDATION
+# ============================================================
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -108,44 +131,50 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
+# ============================================================
+# INTERNATIONALIZATION
+# ============================================================
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = 'static/'
+# ============================================================
+# STATIC FILES
+# ============================================================
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
+# ============================================================
+# DEFAULT PRIMARY KEY
+# ============================================================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Google Drive settings
+
+# ============================================================
+# GOOGLE DRIVE / OAUTH SETTINGS
+# ============================================================
 GOOGLE_CLIENT_SECRETS_FILE = BASE_DIR / "credentials.json"
+
 GOOGLE_DRIVE_SCOPES = [
-     "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/drive",
     "https://www.googleapis.com/auth/drive.file",
     "https://www.googleapis.com/auth/drive.metadata.readonly",
 ]
-GOOGLE_REDIRECT_URI = "http://localhost:8000/oauth2callback/"
+
+GOOGLE_REDIRECT_URI = os.getenv(
+    "GOOGLE_REDIRECT_URI",
+    "http://localhost:8000/oauth2callback/"
+)
 
 
-# GmailAccount/settings.py
-
-# Add these lines
+# ============================================================
+# SESSION SETTINGS
+# ============================================================
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_SAMESITE = 'Lax'   # allows cookie to survive Google redirect
-SESSION_COOKIE_SECURE = False      # False for HTTP localhost
-SESSION_SAVE_EVERY_REQUEST = True  # always persist session
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+SESSION_SAVE_EVERY_REQUEST = True
